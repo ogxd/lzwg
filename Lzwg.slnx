@@ -1,4 +1,9 @@
 <Solution>
+  <Folder Name="/SolutionFiles/">
+    <File Path="README.md" />
+    <File Path="LICENSE.md" />
+    <File Path=".github\workflows\ci.yml" />
+  </Folder>
   <Project Path="Lzwg.Tests\Lzwg.Tests.csproj" Type="Classic C#" />
   <Project Path="Lzwg/Lzwg.csproj" Type="Classic C#" />
 </Solution>
