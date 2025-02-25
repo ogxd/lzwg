@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Lzwg.Tests\Lzwg.Tests.csproj" Type="Classic C#" />
+  <Project Path="Lzwg/Lzwg.csproj" Type="Classic C#" />
+</Solution>
