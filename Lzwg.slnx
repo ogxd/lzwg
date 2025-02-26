@@ -4,6 +4,7 @@
     <File Path="LICENSE.md" />
     <File Path=".github\workflows\ci.yml" />
   </Folder>
+  <Project Path="Lzwg.Benchmarks\Lzwg.Benchmarks.csproj" Type="Classic C#" />
   <Project Path="Lzwg.Tests\Lzwg.Tests.csproj" Type="Classic C#" />
   <Project Path="Lzwg/Lzwg.csproj" Type="Classic C#" />
 </Solution>
