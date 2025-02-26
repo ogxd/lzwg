@@ -1,7 +1,22 @@
-﻿namespace Lzwg.Tests;
+﻿using System.Diagnostics;
+
+namespace Lzwg.Tests;
 
 public class Tests
 {
+    [SetUp]
+    public void Setup()
+    {
+        ConsoleTraceListener listener = new ConsoleTraceListener();
+        Trace.Listeners.Add(listener);
+    }
+    
+    [TearDown]
+    public void TearDown()
+    {
+        Trace.Listeners.Clear();
+    }
+    
     [TestCase(30)]
     [TestCase(128)]
     [TestCase(256)]
@@ -24,6 +39,7 @@ public class Tests
     [TestCase(int.MaxValue, "abaaacabaaccababbbbbbbcababababcbcbcbbbbbbabababccccccbbbbaaabbbbbccccccacbacbabcabc")]
     [TestCase(5, "abaaacabaaccababbbbbbbcababababcbcbcbbbbbbabababccccccbbbbaaabbbbbccccccacbacbabcabc")]
     [TestCase(10, "abaaacabaaccababbbbbbbcababababcbcbcbbbbbbabababccccccbbbbaaabbbbbccccccacbacbabcabc")]
+    [TestCase(10, "abaaacabaaccababbbbbb")]
     [TestCase(15, "abaaacabaaccababbbbbbbcababababcbcbcbbbbbbabababccccccbbbbaaabbbbbccccccacbacbabcabc")]
     [TestCase(5, "babaca")]
     [TestCase(6, "ccabbbabccab")]
