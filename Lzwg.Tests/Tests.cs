@@ -11,15 +11,11 @@ public class Tests
     {
         string text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.";
         
-        LzwgCompressor<char> compressor = new(maxSize, text.ToCharArray());
+        List<int> compressed = Lzwg.Compress(text.ToCharArray(), text.ToHashSet(), maxSize);
 
-        List<int> compressed = compressor.Compress(text.ToCharArray());
-
-        Console.WriteLine($"Ints: {compressed.Count}, Max: {compressed.Max()}");
+        Console.WriteLine($"Output length: {compressed.Count}, Min symbol value: {compressed.Min()}, Max symbol value: {compressed.Max()}, Unique symbols: {compressed.Distinct().Count()}");
         
-        LzwgDecompressor<char> decompressor = new(maxSize, text.ToCharArray());
-        
-        string decompressed = new string(decompressor.Decompress(compressed).ToArray());
+        string decompressed = new string(Lzwg.Decompress(compressed, text.ToHashSet(), maxSize).ToArray());
         
         Assert.That(decompressed, Is.EqualTo(text));
     }
@@ -34,16 +30,11 @@ public class Tests
     [TestCase(5, "aaaaaaaa")]
     public void Test2(int maxSize, string text)
     {
-        LzwgCompressor<char> compressor = new(maxSize, "abc".ToCharArray());
+        List<int> compressed = Lzwg.Compress(text.ToCharArray(), "abc".ToHashSet(), maxSize);
+        
+        Console.WriteLine($"Compressed: {string.Join(", ", compressed.Select(x => x))}\n");
 
-        List<int> compressed = compressor.Compress(text.ToCharArray());
-        
-        Console.WriteLine($"Compressed: {string.Join(", ", compressed.Select(x => x))}");
-        Console.WriteLine("---");
-        
-        LzwgDecompressor<char> decompressor = new(maxSize, "abc".ToCharArray());
-        
-        string decompressed = new string(decompressor.Decompress(compressed).ToArray());
+        string decompressed = new string(Lzwg.Decompress(compressed, "abc".ToHashSet(), maxSize).ToArray());
         
         Assert.That(decompressed, Is.EqualTo(text));
     }

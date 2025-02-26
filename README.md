@@ -6,7 +6,7 @@ LZWG is a variant of the LZW algorithm that keeps tracks of the least recently u
 
 Todo before release:
 
-- [ ] Refactor API
+- [x] Refactor API
 - [ ] Cleanup code
 - [ ] Use optimized linked list
 - [ ] Improve test coverage

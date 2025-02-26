@@ -24,4 +24,10 @@
       <ProjectReference Include="..\Lzwg\Lzwg.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="LoremIpsum.txt">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>
