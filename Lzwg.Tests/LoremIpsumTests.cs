@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace Lzwg.Tests;
 
@@ -28,18 +29,27 @@ public class LoremIpsumTests
         
         Console.WriteLine("Compression:");
         Console.WriteLine($"- Original size: {text.Length} bytes");
+        
         Console.WriteLine($"- Leb128 encoded size: {compressed.Aggregate(0, (sizeBits, next) => {
             EncodingUtils.EncodeLeb128((ulong)next, out int bits);
             return sizeBits + bits;
         }) / 8} bytes");
+        
         int countBits = BitOperations.Log2((uint)BitOperations.Log2((uint)maxSize) + 1) + 1;
         Console.WriteLine($"- Prefix ({countBits}) encoded size: {compressed.Aggregate(0, (sizeBits, next) => {
             EncodingUtils.EncodePrefix((uint)next, countBits, out int bits);
             return sizeBits + bits;
         }) / 8} bytes");
-        // Todo: Check with huffman encoding
-        
-        string decompressed = new string(Lzwg.Decompress(compressed, text.ToHashSet(), maxSize).ToArray());
+
+        uint huffmanMaxBits = 32;
+        var huffmanSymbols = PackageMerge.ComputeHuffmanTablePackageMerge(compressed, huffmanMaxBits);
+        Console.WriteLine($"- Huffman (max {huffmanMaxBits}, symbols: {huffmanSymbols.Length}) encoded size: {compressed.Aggregate(0, (sizeBits, next) => {
+            return sizeBits + huffmanSymbols[next].length;
+        }) / 8} bytes");
+
+        var decompressedChars = Lzwg.Decompress(compressed, text.ToHashSet(), maxSize);
+        ReadOnlySpan<char> span = CollectionsMarshal.AsSpan(decompressedChars);
+        string decompressed = new string(span);
         
         Assert.That(decompressed, Is.EqualTo(text));
     }

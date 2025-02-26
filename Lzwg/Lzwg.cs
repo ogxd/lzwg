@@ -7,7 +7,7 @@ public static class Lzwg
         Compressor<T> compressor = new(maxSize);
         return compressor.Compress(input, dictionary);
     }
-
+    
     public static List<T> Decompress<T>(List<int> compressedData, IReadOnlySet<T> dictionary, int maxSize)
     {
         Decompressor<T> decompressor = new(maxSize);
