@@ -1,9 +1,11 @@
-﻿namespace Lzwg;
+﻿using System.Diagnostics;
+
+namespace Lzwg;
 
 internal class Compressor<T>
 {
     private readonly int _maxDictionarySize;
-    private Dictionary<ArraySegment<T>, (LinkedListNode<ArraySegment<T>> segment, int index)> _dictionary;
+    private Dictionary<ArraySegment<T>, (LinkedListNode<ArraySegment<T>> node, int index)> _dictionary;
     private LinkedList<ArraySegment<T>> _lruOrder;
     private int _nextFreeIndex;
 
@@ -19,7 +21,7 @@ internal class Compressor<T>
             throw new ArgumentException($"Base dictionary size ({dictionary.Count}) exceeds the maximum dictionary size");
         }
         
-        _dictionary = new Dictionary<ArraySegment<T>, (LinkedListNode<ArraySegment<T>> segment, int index)>(new ArraySegmentEqualityComparer<T>());
+        _dictionary = new Dictionary<ArraySegment<T>, (LinkedListNode<ArraySegment<T>> node, int index)>(new ArraySegmentEqualityComparer<T>());
         _lruOrder = new LinkedList<ArraySegment<T>>();
         _nextFreeIndex = 0;
         
@@ -36,23 +38,55 @@ internal class Compressor<T>
         
         for (int i = 0; i < input.Length; i++)
         {
+            Trace.WriteLine($"Processing: {input[i]}");
+            
             var currentSequence = new ArraySegment<T>(input, sequenceStart, i - sequenceStart + 1);
-            if (!_dictionary.TryGetValue(currentSequence, out var v))
+            if (_dictionary.TryGetValue(currentSequence, out var value))
+            {
+                //MoveToMostRecentlyUsed2(value.node);
+            }
+            else
             {
                 ArraySegment<T> previousSequence = new(input, sequenceStart, i - sequenceStart);
-                if (_dictionary.TryGetValue(previousSequence, out var value))
+                if (_dictionary.TryGetValue(previousSequence, out value))
                 {
-                    MoveToMostRecentlyUsed(value.Item1);
+                    //MoveToMostRecentlyUsed(value.Item1);
                     output.Add(value.Item2);
+                    //Trace.WriteLine($"- Output: {value.Item2}");
                 }
                 else
                 {
                     throw new InvalidOperationException("Should not happen");
                 }
-
+                
+                Stack<LinkedListNode<ArraySegment<T>>> nodesToMove = new();
+                var segment = currentSequence[..^1];
+                while (segment.Count > 0)
+                {
+                    LinkedListNode<ArraySegment<T>> currentNode = _dictionary.TryGetValue(segment, out var node) ? node.node : null;
+                    nodesToMove.Push(currentNode);
+                    //MoveToMostRecentlyUsed(currentNode);
+                    //break;
+                    segment = segment[..^1];
+                }
+                while (nodesToMove.Count > 0)
+                {
+                    var currentNode = nodesToMove.Pop();
+                    if (currentNode == null)
+                    {
+                        break;
+                    }
+                    MoveToMostRecentlyUsed(currentNode);
+                }
+                
                 // Add new sequence to the dictionary
                 AddToDictionary(currentSequence);
                 sequenceStart = i;
+                
+                // if (_dictionary.TryGetValue(new ArraySegment<T>(input, sequenceStart, 1), out value))
+                // {
+                //     MoveToMostRecentlyUsed(value.Item1);
+                // }
             }
         }
 
@@ -85,6 +119,8 @@ internal class Compressor<T>
         int index = GetNewIndex();
         _dictionary[sequence] = (node, index);
         
+        Trace.WriteLine("- Added: " + string.Join("", sequence) + " => " + index);
+        
         return index;
     }
 
@@ -112,11 +148,22 @@ internal class Compressor<T>
         _lruOrder.Remove(node!);
         _dictionary.Remove(node!.Value, out var removedValue);
         _nextFreeIndex = removedValue.index;
+        
+        Trace.WriteLine("- Removed: " + string.Join("", node.Value) + " => " + removedValue.index);
     }
 
     private void MoveToMostRecentlyUsed(LinkedListNode<ArraySegment<T>> node)
     {
         _lruOrder.Remove(node);
         _lruOrder.AddFirst(node);
+        
+        Trace.WriteLine($"- Moved: {string.Join("", node.Value)}");
+    }
+    private void MoveToMostRecentlyUsed2(LinkedListNode<ArraySegment<T>> node)
+    {
+        _lruOrder.Remove(node);
+        _lruOrder.AddFirst(node);
+        
+        Trace.WriteLine($"- Moved: {string.Join("", node.Value)} *");
     }
 }

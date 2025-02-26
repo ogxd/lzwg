@@ -1,9 +1,12 @@
+using System.Diagnostics;
+
 namespace Lzwg;
 
 internal class Decompressor<T>
 {
     private readonly int _maxDictionarySize;
     private Dictionary<int, LinkedListNode<Entry>> _dictionary;
+    private Dictionary<ArraySegment<T>, LinkedListNode<Entry>> _inverseDictionary;
     private LinkedList<Entry> _lruOrder;
     private int _nextFreeIndex;
 
@@ -15,6 +18,7 @@ internal class Decompressor<T>
     public List<T> Decompress(List<int> compressedData, IReadOnlySet<T> dictionary)
     {
         _dictionary = new Dictionary<int, LinkedListNode<Entry>>();
+        _inverseDictionary = new Dictionary<ArraySegment<T>, LinkedListNode<Entry>>(new ArraySegmentEqualityComparer<T>());
         _lruOrder = new LinkedList<Entry>();
         _nextFreeIndex = 0;
         
@@ -24,6 +28,7 @@ internal class Decompressor<T>
             ArraySegment<T> singleItem = new([item]);
             LinkedListNode<Entry> node = _lruOrder.AddLast(new Entry(_nextFreeIndex, singleItem));
             _dictionary[_nextFreeIndex] = node;
+            _inverseDictionary[singleItem] = node;
             _nextFreeIndex++;
         }
         
@@ -32,6 +37,8 @@ internal class Decompressor<T>
         
         foreach (int index in compressedData)
         {
+            Trace.WriteLine($"Processing: {index}");
+            
             ArraySegment<T> currentSequence;
 
             if (_dictionary.TryGetValue(index, out var node))
@@ -55,17 +62,26 @@ internal class Decompressor<T>
                     
                     AddToDictionary(sequence);
                 }
-
-                if (move)
+                
+                for (int i = 1; i <= node.Value.Segment.Count; i++)
                 {
-                    MoveToMostRecentlyUsed(node); // Hack to match compression: current sequence must be placed as MRU
+                    var segment = node.Value.Segment[..i];
+                    LinkedListNode<Entry> currentNode = _inverseDictionary.TryGetValue(segment, out var x) ? x : null;
+                    if (currentNode == null)
+                    {
+                        break;
+                    }
+                    if (move)
+                    {
+                        MoveToMostRecentlyUsed(currentNode);
+                    }
                 }
             }
             else
             {
                 // Special case: The new sequence is previousSequence + first element of previousSequence
                 T[] inferredSequence = previousSequence.Value.Concat([previousSequence.Value[0]]).ToArray();
-
+                
                 currentSequence = inferredSequence;
 
                 AddToDictionary(inferredSequence);
@@ -83,7 +99,10 @@ internal class Decompressor<T>
     {
         LinkedListNode<Entry> node = _lruOrder.AddFirst(new Entry(_nextFreeIndex, newSequence));
         _dictionary[_nextFreeIndex] = node;
+        _inverseDictionary[newSequence] = node;
         _nextFreeIndex++;
+        
+        Trace.WriteLine("- Added: " + string.Join("", newSequence) + " => " + (_nextFreeIndex - 1));
     }
 
     /// <summary>
@@ -106,15 +125,20 @@ internal class Decompressor<T>
         // Remove from both the LRU order list and the dictionary
         _lruOrder.Remove(node);
         _dictionary.Remove(indexToRemove, out _);
+        _inverseDictionary.Remove(node.Value.Segment);
     
         // Reuse the index for future entries
         _nextFreeIndex = indexToRemove;
+        
+        Trace.WriteLine("- Removed: " + string.Join("", node.Value.Segment) + " => " + indexToRemove);
     }
 
     private void MoveToMostRecentlyUsed(LinkedListNode<Entry> node)
     {
         _lruOrder.Remove(node);
         _lruOrder.AddFirst(node);
+        
+        Trace.WriteLine($"- Moved: {string.Join("", node.Value.Segment)}");
     }
     
     private readonly record struct Entry(int Index, ArraySegment<T> Segment);

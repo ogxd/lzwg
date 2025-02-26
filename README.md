@@ -22,7 +22,7 @@ Notes:
 
 ## Performance
 
-This C# implementation uses `ArraySegment<T>` for minimal allocations and O(1) operations all the way through. This makes the implementation extremely efficient (both compression and decompression).  
+This C# implementation uses `ArraySegment<T>` for minimal allocations and O(1) operations all the way through. This makes the implementation very efficient. Yet, the algorithm needs further work and fast paths for optimal performance.
 
 ## Todo
 
