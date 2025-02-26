@@ -6,6 +6,7 @@ internal class Decompressor<T>
 {
     private readonly int _maxDictionarySize;
     private Dictionary<int, LinkedListNode<Entry>> _dictionary;
+    private Dictionary<ArraySegment<T>, LinkedListNode<Entry>> _inverseDictionary;
     private LinkedList<Entry> _lruOrder;
     private int _nextFreeIndex;
 
@@ -17,6 +18,7 @@ internal class Decompressor<T>
     public List<T> Decompress(List<int> compressedData, IReadOnlySet<T> dictionary)
     {
         _dictionary = new Dictionary<int, LinkedListNode<Entry>>();
+        _inverseDictionary = new Dictionary<ArraySegment<T>, LinkedListNode<Entry>>(new ArraySegmentEqualityComparer<T>());
         _lruOrder = new LinkedList<Entry>();
         _nextFreeIndex = 0;
         
@@ -26,6 +28,7 @@ internal class Decompressor<T>
             ArraySegment<T> singleItem = new([item]);
             LinkedListNode<Entry> node = _lruOrder.AddLast(new Entry(_nextFreeIndex, singleItem));
             _dictionary[_nextFreeIndex] = node;
+            _inverseDictionary[singleItem] = node;
             _nextFreeIndex++;
         }
         
@@ -60,19 +63,10 @@ internal class Decompressor<T>
                     AddToDictionary(sequence);
                 }
                 
-                Stack<LinkedListNode<Entry>> nodesToMove = new();
-                var segment = node.Value.Segment;
-                while (segment.Count > 0)
+                for (int i = 1; i <= node.Value.Segment.Count; i++)
                 {
-                    LinkedListNode<Entry> currentNode = _dictionary.FirstOrDefault(x => x.Value.Value.Segment.SequenceEqual(segment)).Value;
-                    nodesToMove.Push(currentNode);
-                    //MoveToMostRecentlyUsed(currentNode);
-                    //break;
-                    segment = segment[..^1];
-                }
-                while (nodesToMove.Count > 0)
-                {
-                    var currentNode = nodesToMove.Pop();
+                    var segment = node.Value.Segment[..i];
+                    LinkedListNode<Entry> currentNode = _inverseDictionary.TryGetValue(segment, out var x) ? x : null;
                     if (currentNode == null)
                     {
                         break;
@@ -88,8 +82,6 @@ internal class Decompressor<T>
                 // Special case: The new sequence is previousSequence + first element of previousSequence
                 T[] inferredSequence = previousSequence.Value.Concat([previousSequence.Value[0]]).ToArray();
                 
-                //MoveToMostRecentlyUsed(_lruOrder.Find());
-
                 currentSequence = inferredSequence;
 
                 AddToDictionary(inferredSequence);
@@ -107,6 +99,7 @@ internal class Decompressor<T>
     {
         LinkedListNode<Entry> node = _lruOrder.AddFirst(new Entry(_nextFreeIndex, newSequence));
         _dictionary[_nextFreeIndex] = node;
+        _inverseDictionary[newSequence] = node;
         _nextFreeIndex++;
         
         Trace.WriteLine("- Added: " + string.Join("", newSequence) + " => " + (_nextFreeIndex - 1));
@@ -132,6 +125,7 @@ internal class Decompressor<T>
         // Remove from both the LRU order list and the dictionary
         _lruOrder.Remove(node);
         _dictionary.Remove(indexToRemove, out _);
+        _inverseDictionary.Remove(node.Value.Segment);
     
         // Reuse the index for future entries
         _nextFreeIndex = indexToRemove;

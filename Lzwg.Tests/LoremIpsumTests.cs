@@ -43,9 +43,9 @@ public class LoremIpsumTests
 
         uint huffmanMaxBits = 32;
         var huffmanSymbols = PackageMerge.ComputeHuffmanTablePackageMerge(compressed, huffmanMaxBits);
-        Console.WriteLine($"- Huffman (max {huffmanMaxBits}, symbols: {huffmanSymbols.Length}) encoded size: {compressed.Aggregate(0, (sizeBits, next) => {
-            return sizeBits + huffmanSymbols[next].length;
-        }) / 8} bytes");
+        int huffmanEncodedSize = compressed.Aggregate(0, (sizeBits, next) => sizeBits + huffmanSymbols[next].length) / 8;
+        int huffmanTableSize = huffmanSymbols.Aggregate(0, (sizeBits, next) => sizeBits + next.length) / 8;
+        Console.WriteLine($"- Huffman (max {huffmanMaxBits}, symbols: {huffmanSymbols.Length}) encoded size: {huffmanEncodedSize + huffmanTableSize} bytes ({huffmanEncodedSize} (payload) + {huffmanTableSize}(table))");
 
         var decompressedChars = Lzwg.Decompress(compressed, text.ToHashSet(), maxSize);
         ReadOnlySpan<char> span = CollectionsMarshal.AsSpan(decompressedChars);
