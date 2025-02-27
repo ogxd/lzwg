@@ -5,8 +5,8 @@ namespace Lzwg;
 internal class Compressor<T>
 {
     private readonly int _maxDictionarySize;
-    private Dictionary<ArraySegment<T>, (LinkedListNode<ArraySegment<T>> node, int index)> _dictionary;
-    private LinkedList<ArraySegment<T>> _lruOrder;
+    private Dictionary<ReadOnlySegment<T>, (LinkedListNode<ReadOnlySegment<T>> node, int index)> _dictionary;
+    private LinkedList<ReadOnlySegment<T>> _lruOrder;
     private int _nextFreeIndex;
 
     public Compressor(int maxDictionarySize)
@@ -21,15 +21,15 @@ internal class Compressor<T>
             throw new ArgumentException($"Base dictionary size ({dictionary.Count}) exceeds the maximum dictionary size");
         }
         
-        _dictionary = new Dictionary<ArraySegment<T>, (LinkedListNode<ArraySegment<T>> node, int index)>(new ArraySegmentEqualityComparer<T>());
-        _lruOrder = new LinkedList<ArraySegment<T>>();
+        _dictionary = new Dictionary<ReadOnlySegment<T>, (LinkedListNode<ReadOnlySegment<T>> node, int index)>();
+        _lruOrder = new LinkedList<ReadOnlySegment<T>>();
         _nextFreeIndex = 0;
         
         // Sort the dictionary to ensure consistent order
         foreach (var item in dictionary.Order())
         {
-            ArraySegment<T> singleItemList = new([item]);
-            LinkedListNode<ArraySegment<T>> node = _lruOrder.AddLast(singleItemList);
+            ReadOnlySegment<T> singleItemList = new([item], 0, 1);
+            LinkedListNode<ReadOnlySegment<T>> node = _lruOrder.AddLast(singleItemList);
             _dictionary[singleItemList] = (node, GetNewIndex());
         }
         
@@ -40,14 +40,14 @@ internal class Compressor<T>
         {
             Debug.WriteLine($"Processing: {input[i]}");
             
-            var currentSequence = new ArraySegment<T>(input, sequenceStart, i - sequenceStart + 1);
+            ReadOnlySegment<T> currentSequence = new(input, sequenceStart, i - sequenceStart + 1);
             if (_dictionary.TryGetValue(currentSequence, out var value))
             {
                 //MoveToMostRecentlyUsed2(value.node);
             }
             else
             {
-                ArraySegment<T> previousSequence = new(input, sequenceStart, i - sequenceStart);
+                ReadOnlySegment<T> previousSequence = new(input, sequenceStart, i - sequenceStart);
                 if (_dictionary.TryGetValue(previousSequence, out value))
                 {
                     //MoveToMostRecentlyUsed(value.Item1);
@@ -84,8 +84,8 @@ internal class Compressor<T>
         // Output the last sequence
         if (sequenceStart < input.Length)
         {
-            ArraySegment<T> lastSequence = new(input, sequenceStart, input.Length - sequenceStart);
-            if (_dictionary.TryGetValue(lastSequence, out (LinkedListNode<ArraySegment<T>> segment, int index) value))
+            ReadOnlySegment<T> lastSequence = new(input, sequenceStart, input.Length - sequenceStart);
+            if (_dictionary.TryGetValue(lastSequence, out (LinkedListNode<ReadOnlySegment<T>> segment, int index) value))
             {
                 output.Add(value.index);
             }
@@ -99,14 +99,14 @@ internal class Compressor<T>
         return output;
     }
 
-    private int AddToDictionary(ArraySegment<T> sequence)
+    private int AddToDictionary(ReadOnlySegment<T> sequence)
     {
         if (_dictionary.Count >= _maxDictionarySize)
         {
             RemoveLeastRecentlyUsed();
         }
 
-        LinkedListNode<ArraySegment<T>> node = _lruOrder.AddFirst(sequence);
+        LinkedListNode<ReadOnlySegment<T>> node = _lruOrder.AddFirst(sequence);
         int index = GetNewIndex();
         _dictionary[sequence] = (node, index);
         
@@ -128,7 +128,7 @@ internal class Compressor<T>
     private void RemoveLeastRecentlyUsed()
     {
         // Start from the least recently used entry (at the end of the list)
-        LinkedListNode<ArraySegment<T>> node = _lruOrder.Last!;
+        LinkedListNode<ReadOnlySegment<T>> node = _lruOrder.Last!;
     
         // Skip all single-character entries as they must be preserved
         while (node != null && node.Value.Count == 1)
@@ -143,18 +143,11 @@ internal class Compressor<T>
         Debug.WriteLine("- Removed: " + string.Join("", node.Value) + " => " + removedValue.index);
     }
 
-    private void MoveToMostRecentlyUsed(LinkedListNode<ArraySegment<T>> node)
+    private void MoveToMostRecentlyUsed(LinkedListNode<ReadOnlySegment<T>> node)
     {
         _lruOrder.Remove(node);
         _lruOrder.AddFirst(node);
         
         Debug.WriteLine($"- Moved: {string.Join("", node.Value)}");
-    }
-    private void MoveToMostRecentlyUsed2(LinkedListNode<ArraySegment<T>> node)
-    {
-        _lruOrder.Remove(node);
-        _lruOrder.AddFirst(node);
-        
-        Debug.WriteLine($"- Moved: {string.Join("", node.Value)} *");
     }
 }
