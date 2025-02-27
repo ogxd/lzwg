@@ -31,7 +31,9 @@ These benchmarks computes the compression ratio with the dictionary maximum size
 | Using LRU (LZWG) | Using dictionary reset method |
 |---|---|
 | ![lru](./Lzwg.Benchmarks/jpeg-rle.png)  | ![reset](./Lzwg.Benchmarks/jpeg-rle-reset.png) |
-| The most efficient compression is using huffman encoding with a limited dictionary size of about 32k entries. We can see that with an unbounded dictionary the huffman encoding is not viable for this dataset | Here we compare with the "traditional" way to limiting the dictionary size, which consists in reseting the dictionary every time it reaches some defined maximum size. We can see that LZWG slightly outperforms this approach. |
+| The most efficient compression is using huffman encoding with a limited dictionary size of about 32k entries. We can see that with an unbounded dictionary the huffman encoding is not viable for this dataset as the huffman table itself will require a lot of space for its storage. | Here we compare with the "traditional" way to limiting the dictionary size, which consists in reseting the dictionary every time it reaches some defined maximum size. We can see that LZWG slightly outperforms this approach. |
+
+Make sure to benchmark LZWG with your own data and dictionary size to see if it fits your needs.
 
 ## Performance
 
