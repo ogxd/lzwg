@@ -59,19 +59,10 @@ internal class Compressor<T>
                     throw new InvalidOperationException("Should not happen");
                 }
                 
-                Stack<LinkedListNode<ArraySegment<T>>> nodesToMove = new();
-                var segment = currentSequence[..^1];
-                while (segment.Count > 0)
+                for (int j = 1; j <= currentSequence.Count - 1; j++)
                 {
-                    LinkedListNode<ArraySegment<T>> currentNode = _dictionary.TryGetValue(segment, out var node) ? node.node : null;
-                    nodesToMove.Push(currentNode);
-                    //MoveToMostRecentlyUsed(currentNode);
-                    //break;
-                    segment = segment[..^1];
-                }
-                while (nodesToMove.Count > 0)
-                {
-                    var currentNode = nodesToMove.Pop();
+                    var segment = currentSequence[..j];
+                    var currentNode = _dictionary.TryGetValue(segment, out var node) ? node.node : null;
                     if (currentNode == null)
                     {
                         break;
