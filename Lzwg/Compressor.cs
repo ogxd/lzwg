@@ -38,7 +38,7 @@ internal class Compressor<T>
         
         for (int i = 0; i < input.Length; i++)
         {
-            Trace.WriteLine($"Processing: {input[i]}");
+            Debug.WriteLine($"Processing: {input[i]}");
             
             var currentSequence = new ArraySegment<T>(input, sequenceStart, i - sequenceStart + 1);
             if (_dictionary.TryGetValue(currentSequence, out var value))
@@ -52,7 +52,7 @@ internal class Compressor<T>
                 {
                     //MoveToMostRecentlyUsed(value.Item1);
                     output.Add(value.Item2);
-                    //Trace.WriteLine($"- Output: {value.Item2}");
+                    //Debug.WriteLine($"- Output: {value.Item2}");
                 }
                 else
                 {
@@ -119,7 +119,7 @@ internal class Compressor<T>
         int index = GetNewIndex();
         _dictionary[sequence] = (node, index);
         
-        Trace.WriteLine("- Added: " + string.Join("", sequence) + " => " + index);
+        Debug.WriteLine("- Added: " + string.Join("", sequence) + " => " + index);
         
         return index;
     }
@@ -149,7 +149,7 @@ internal class Compressor<T>
         _dictionary.Remove(node!.Value, out var removedValue);
         _nextFreeIndex = removedValue.index;
         
-        Trace.WriteLine("- Removed: " + string.Join("", node.Value) + " => " + removedValue.index);
+        Debug.WriteLine("- Removed: " + string.Join("", node.Value) + " => " + removedValue.index);
     }
 
     private void MoveToMostRecentlyUsed(LinkedListNode<ArraySegment<T>> node)
@@ -157,13 +157,13 @@ internal class Compressor<T>
         _lruOrder.Remove(node);
         _lruOrder.AddFirst(node);
         
-        Trace.WriteLine($"- Moved: {string.Join("", node.Value)}");
+        Debug.WriteLine($"- Moved: {string.Join("", node.Value)}");
     }
     private void MoveToMostRecentlyUsed2(LinkedListNode<ArraySegment<T>> node)
     {
         _lruOrder.Remove(node);
         _lruOrder.AddFirst(node);
         
-        Trace.WriteLine($"- Moved: {string.Join("", node.Value)} *");
+        Debug.WriteLine($"- Moved: {string.Join("", node.Value)} *");
     }
 }

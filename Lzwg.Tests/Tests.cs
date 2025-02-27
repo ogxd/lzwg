@@ -4,16 +4,17 @@ namespace Lzwg.Tests;
 
 public class Tests
 {
-    [SetUp]
+    [OneTimeSetUp]
     public void Setup()
     {
         ConsoleTraceListener listener = new ConsoleTraceListener();
         Trace.Listeners.Add(listener);
     }
     
-    [TearDown]
+    [OneTimeTearDown]
     public void TearDown()
     {
+        Trace.Flush();
         Trace.Listeners.Clear();
     }
     

@@ -37,7 +37,7 @@ internal class Decompressor<T>
         
         foreach (int index in compressedData)
         {
-            Trace.WriteLine($"Processing: {index}");
+            Debug.WriteLine($"Processing: {index}");
             
             ArraySegment<T> currentSequence;
 
@@ -102,7 +102,7 @@ internal class Decompressor<T>
         _inverseDictionary[newSequence] = node;
         _nextFreeIndex++;
         
-        Trace.WriteLine("- Added: " + string.Join("", newSequence) + " => " + (_nextFreeIndex - 1));
+        Debug.WriteLine("- Added: " + string.Join("", newSequence) + " => " + (_nextFreeIndex - 1));
     }
 
     /// <summary>
@@ -130,7 +130,7 @@ internal class Decompressor<T>
         // Reuse the index for future entries
         _nextFreeIndex = indexToRemove;
         
-        Trace.WriteLine("- Removed: " + string.Join("", node.Value.Segment) + " => " + indexToRemove);
+        Debug.WriteLine("- Removed: " + string.Join("", node.Value.Segment) + " => " + indexToRemove);
     }
 
     private void MoveToMostRecentlyUsed(LinkedListNode<Entry> node)
@@ -138,7 +138,7 @@ internal class Decompressor<T>
         _lruOrder.Remove(node);
         _lruOrder.AddFirst(node);
         
-        Trace.WriteLine($"- Moved: {string.Join("", node.Value.Segment)}");
+        Debug.WriteLine($"- Moved: {string.Join("", node.Value.Segment)}");
     }
     
     private readonly record struct Entry(int Index, ArraySegment<T> Segment);
