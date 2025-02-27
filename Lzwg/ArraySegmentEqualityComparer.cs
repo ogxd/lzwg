@@ -13,7 +13,15 @@ internal class ArraySegmentEqualityComparer<T> : IEqualityComparer<ArraySegment<
             return true;
 
         // Slow path, compare elements one by one
-        return x.SequenceEqual(y);
+        for (int i = 0; i < x.Count; i++)
+        {
+            if (!x[i]!.Equals(y[i]))
+            {
+                return false;
+            }
+        }
+        
+        return true;
     }
 
     // We could optimize by computing the hash only once and storing it in a field, but it requires a custom structure

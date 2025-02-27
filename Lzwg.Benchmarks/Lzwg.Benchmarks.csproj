@@ -16,4 +16,13 @@
       <PackageReference Include="ScottPlot" Version="5.0.54" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="jpegrles.bin">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="jpegdcts.bin">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

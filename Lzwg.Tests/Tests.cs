@@ -55,4 +55,19 @@ public class Tests
         
         Assert.That(decompressed, Is.EqualTo(text));
     }
+    
+    [TestCase(3, "aaaaaaaa")]
+    [TestCase(8, "abaaacabaaccababbbbbbbcababababcbcbcbbbbbbabababccccccbbbbaaabbbbbccccccacbacbabcabc")]
+    [TestCase(6, "abaaacabaaccababbbbbb")]
+    [TestCase(15, "abaaacabaaccababbbbbbbcababababcbcbcbbbbbbabababccccccbbbbaaabbbbbccccccacbacbabcabc")]
+    public void TestWithReset(int resetAfter, string text)
+    {
+        List<int> compressed = Lzwg.Compress(text.ToCharArray(), "abc".ToHashSet(), int.MaxValue, resetAfter);
+        
+        Console.WriteLine($"Compressed: {string.Join(", ", compressed.Select(x => x))}\n");
+
+        string decompressed = new string(Lzwg.Decompress(compressed, "abc".ToHashSet(), int.MaxValue, resetAfter).ToArray());
+        
+        Assert.That(decompressed, Is.EqualTo(text));
+    }
 }

@@ -5,33 +5,22 @@ namespace Lzwg;
 internal class Decompressor<T>
 {
     private readonly int _maxDictionarySize;
+    private readonly int _dictionaryResetSize;
     private Dictionary<int, LinkedListNode<Entry>> _dictionary;
     private Dictionary<ArraySegment<T>, LinkedListNode<Entry>> _inverseDictionary;
     private LinkedList<Entry> _lruOrder;
     private int _nextFreeIndex;
 
-    public Decompressor(int maxDictionarySize)
+    public Decompressor(int maxDictionarySize, int dictionaryResetSize = int.MaxValue)
     {
         _maxDictionarySize = maxDictionarySize;
+        _dictionaryResetSize = dictionaryResetSize;
     }
 
     public List<T> Decompress(List<int> compressedData, IReadOnlySet<T> dictionary)
     {
-        _dictionary = new Dictionary<int, LinkedListNode<Entry>>();
-        _inverseDictionary = new Dictionary<ArraySegment<T>, LinkedListNode<Entry>>(new ArraySegmentEqualityComparer<T>());
-        _lruOrder = new LinkedList<Entry>();
-        _nextFreeIndex = 0;
-        
-        // Sort the dictionary to ensure consistent order
-        foreach (var item in dictionary.Order())
-        {
-            ArraySegment<T> singleItem = new([item]);
-            LinkedListNode<Entry> node = _lruOrder.AddLast(new Entry(_nextFreeIndex, singleItem));
-            _dictionary[_nextFreeIndex] = node;
-            _inverseDictionary[singleItem] = node;
-            _nextFreeIndex++;
-        }
-        
+        Initialize(dictionary);
+
         List<T> output = new();
         ArraySegment<T>? previousSequence = null;
         
@@ -90,11 +79,35 @@ internal class Decompressor<T>
             output.AddRange(currentSequence);
 
             previousSequence = currentSequence;
+
+            if (_dictionary.Count >= _dictionaryResetSize)
+            {
+                Debug.WriteLine("Dictionary reset");
+                Initialize(dictionary);
+            }
         }
 
         return output;
     }
-    
+
+    private void Initialize(IReadOnlySet<T> dictionary)
+    {
+        _dictionary = new Dictionary<int, LinkedListNode<Entry>>();
+        _inverseDictionary = new Dictionary<ArraySegment<T>, LinkedListNode<Entry>>(new ArraySegmentEqualityComparer<T>());
+        _lruOrder = new LinkedList<Entry>();
+        _nextFreeIndex = 0;
+        
+        // Sort the dictionary to ensure consistent order
+        foreach (var item in dictionary.Order())
+        {
+            ArraySegment<T> singleItem = new([item]);
+            LinkedListNode<Entry> node = _lruOrder.AddLast(new Entry(_nextFreeIndex, singleItem));
+            _dictionary[_nextFreeIndex] = node;
+            _inverseDictionary[singleItem] = node;
+            _nextFreeIndex++;
+        }
+    }
+
     private void AddToDictionary(ArraySegment<T> newSequence)
     {
         LinkedListNode<Entry> node = _lruOrder.AddFirst(new Entry(_nextFreeIndex, newSequence));

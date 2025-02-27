@@ -2,4 +2,8 @@
 
 using Lzwg.Benchmarks;
 
-Plots.DoWork();
+// PlotBars.LoremIpsum();
+// PlotBars.JpegRles();
+
+PlotScatter.LoremIpsum();
+//PlotScatter.JpegRles();
