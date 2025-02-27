@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Lzwg;
 
@@ -43,42 +44,35 @@ internal class Compressor<T>
             var currentSequence = new ArraySegment<T>(input, sequenceStart, i - sequenceStart + 1);
             if (_dictionary.TryGetValue(currentSequence, out var value))
             {
-                //MoveToMostRecentlyUsed2(value.node);
+                continue;
+            }
+
+            ArraySegment<T> previousSequence = new(input, sequenceStart, i - sequenceStart);
+            if (_dictionary.TryGetValue(previousSequence, out value))
+            {
+                //MoveToMostRecentlyUsed(value.Item1);
+                output.Add(value.Item2);
+                //Debug.WriteLine($"- Output: {value.Item2}");
             }
             else
             {
-                ArraySegment<T> previousSequence = new(input, sequenceStart, i - sequenceStart);
-                if (_dictionary.TryGetValue(previousSequence, out value))
-                {
-                    //MoveToMostRecentlyUsed(value.Item1);
-                    output.Add(value.Item2);
-                    //Debug.WriteLine($"- Output: {value.Item2}");
-                }
-                else
-                {
-                    throw new InvalidOperationException("Should not happen");
-                }
-                
-                for (int j = 1; j <= currentSequence.Count - 1; j++)
-                {
-                    var segment = currentSequence[..j];
-                    var currentNode = _dictionary.TryGetValue(segment, out var node) ? node.node : null;
-                    if (currentNode == null)
-                    {
-                        break;
-                    }
-                    MoveToMostRecentlyUsed(currentNode);
-                }
-                
-                // Add new sequence to the dictionary
-                AddToDictionary(currentSequence);
-                sequenceStart = i;
-                
-                // if (_dictionary.TryGetValue(new ArraySegment<T>(input, sequenceStart, 1), out value))
-                // {
-                //     MoveToMostRecentlyUsed(value.Item1);
-                // }
+                throw new InvalidOperationException("Should not happen");
             }
+                
+            for (int j = 1; j <= currentSequence.Count - 1; j++)
+            {
+                var segment = currentSequence[..j];
+                var currentNode = _dictionary.TryGetValue(segment, out var node) ? node.node : null;
+                if (currentNode == null)
+                {
+                    break;
+                }
+                MoveToMostRecentlyUsed(currentNode);
+            }
+                
+            // Add new sequence to the dictionary
+            AddToDictionary(currentSequence);
+            sequenceStart = i;
         }
 
         // Output the last sequence
@@ -115,6 +109,7 @@ internal class Compressor<T>
         return index;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private int GetNewIndex()
     {
         // It may either be the next free index or the dictionary size
@@ -149,12 +144,5 @@ internal class Compressor<T>
         _lruOrder.AddFirst(node);
         
         Debug.WriteLine($"- Moved: {string.Join("", node.Value)}");
-    }
-    private void MoveToMostRecentlyUsed2(LinkedListNode<ArraySegment<T>> node)
-    {
-        _lruOrder.Remove(node);
-        _lruOrder.AddFirst(node);
-        
-        Debug.WriteLine($"- Moved: {string.Join("", node.Value)} *");
     }
 }

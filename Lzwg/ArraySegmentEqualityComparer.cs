@@ -4,10 +4,16 @@ internal class ArraySegmentEqualityComparer<T> : IEqualityComparer<ArraySegment<
 {
     public bool Equals(ArraySegment<T> x, ArraySegment<T> y)
     {
+        // Turbo path
         if (x.Count != y.Count)
-            return false; // Different lengths
+            return false;
+        
+        // Fast path to skip the sequence comparison if the references are the same
+        if (x.Array == y.Array && x.Offset == y.Offset)
+            return true;
 
-        return x.SequenceEqual(y); // Compare elements
+        // Slow path, compare elements one by one
+        return x.SequenceEqual(y);
     }
 
     // We could optimize by computing the hash only once and storing it in a field, but it requires a custom structure
